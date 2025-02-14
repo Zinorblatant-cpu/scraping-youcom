@@ -11,36 +11,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def auto_scroll(driver, url):
+def wait_for_page_load(driver, url):
     driver.get(url)
-    total_height = 0  
-    distance = 300  
-    scroll_pause_time = 0.5  
-    click_count = 0  
-    start_time = time.time()  
-    html_pages = []  # List to store HTMLs of all pages visited
-
-    while True:
-        driver.execute_script(f"window.scrollBy(0, {distance});")
-        total_height += distance
-        time.sleep(scroll_pause_time)
-
-        if time.time() - start_time > 25:
-            sys.stderr.write("[INFO] Scrolling in progress...\n")  
-
-        scroll_height = driver.execute_script("return document.body.scrollHeight;")
-        if total_height >= scroll_height - driver.execute_script("return window.innerHeight;"):
-            sys.stderr.write("[INFO] End of page reached. Stopping scroll.\n")
-            break
-
-        if time.time() - start_time > 90:
-            sys.stderr.write("[ERROR] Timeout reached (90s). Exiting.\n")
-            return {"status": "error", "message": "Timeout after 90 seconds", "action": "stop_script"}
-
-        # Store the HTML of the current page
-        html_pages.append(driver.page_source)
-
-    return html_pages  # Return all collected HTMLs
+    # Espera até que a página esteja completamente carregada
+    WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+    # Captura o HTML da página
+    html_content = driver.page_source
+    return [html_content]  # Retorna o HTML em uma lista para manter a compatibilidade com o código existente
 
 def parse_products(all_htmls):
     all_products = []
@@ -128,16 +107,15 @@ if __name__ == '__main__':
         'https://www.youcom.com.br/promocao?o=descDate&pg=3',
         'https://www.youcom.com.br/promocao?o=descDate&pg=4',
         'https://www.youcom.com.br/promocao?o=descDate&pg=5',
-        'https://www.youcom.com.br/promocao?o=descDate&pg=6',
-        'https://www.youcom.com.br/promocao?o=descDate&pg=7'
+        'https://www.youcom.com.br/promocao?o=descDate&pg=6'
     ]
     
     all_products = []
     total_products = 0
 
     for url in urls:
-        html_pages = auto_scroll(driver, url)  # Captures all HTMLs during navigation for each URL
-        products, cont = parse_products(html_pages)  # Passes all HTMLs to the parsing function
+        html_pages = wait_for_page_load(driver, url)  # Espera a página carregar e captura o HTML
+        products, cont = parse_products(html_pages)  # Processa o HTML para extrair os produtos
         all_products.extend(products)
         total_products += cont
         if total_products >= 250:
@@ -156,4 +134,4 @@ if __name__ == '__main__':
     }
 
     json_string = json.dumps(output_data, ensure_ascii=False, indent=4)
-    sys.stdout.buffer.write(json_string.encode("utf-8"))    
+    sys.stdout.buffer.write(json_string.encode("utf-8"))
