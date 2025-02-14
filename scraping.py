@@ -13,13 +13,13 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def wait_for_page_load(driver, url):
     driver.get(url)
-    # Espera até que a página esteja completamente carregada
+    # Wait until the page is fully loaded
     WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
-    # Captura o HTML da página
+    # Capture the page's HTML content
     html_content = driver.page_source
-    return [html_content]  # Retorna o HTML em uma lista para manter a compatibilidade com o código existente
+    return [html_content]  # Return the HTML as a list to maintain compatibility with existing code
 
 def parse_products(all_htmls):
     all_products = []
@@ -114,8 +114,8 @@ if __name__ == '__main__':
     total_products = 0
 
     for url in urls:
-        html_pages = wait_for_page_load(driver, url)  # Espera a página carregar e captura o HTML
-        products, cont = parse_products(html_pages)  # Processa o HTML para extrair os produtos
+        html_pages = wait_for_page_load(driver, url)  # Wait for the page to load and capture the HTML
+        products, cont = parse_products(html_pages)  # Process the HTML to extract the products
         all_products.extend(products)
         total_products += cont
         if total_products >= 250:
